@@ -6,11 +6,11 @@
 # - Custom checks: https://getbruin.com/docs/bruin/quality/custom
 
 # TODO: Set the asset name (recommended: staging.trips).
-name: TODO_SET_ASSET_NAME
+name: staging.trips
 # TODO: Set platform type.
 # Docs: https://getbruin.com/docs/bruin/assets/sql
 # suggested type: duckdb.sql
-type: TODO
+type: duckdb.sql
 
 # TODO: Declare dependencies so `bruin run ... --downstream` and lineage work.
 # Examples:
@@ -18,8 +18,8 @@ type: TODO
 #   - ingestion.trips
 #   - ingestion.payment_lookup
 depends:
-  - TODO_DEP_1
-  - TODO_DEP_2
+  - ingestion.trips
+  - ingestion.payment_lookup
 
 # TODO: Choose time-based incremental processing if the dataset is naturally time-windowed.
 # - This module expects you to use `time_interval` to reprocess only the requested window.
@@ -47,36 +47,21 @@ materialization:
   # - delete+insert (refresh partitions based on incremental_key values)
   # - merge (upsert based on primary key)
   # - time_interval (refresh rows within a time window)
-  strategy: TODO
+  # AA: I commented out : strategy: TODO
   # TODO: set incremental_key to your event time column (DATE or TIMESTAMP).
-  incremental_key: TODO_SET_INCREMENTAL_KEY
+  # AA: I commented out :incremental_key: TODO_SET_INCREMENTAL_KEY
   # TODO: choose `date` vs `timestamp` based on the incremental_key type.
-  time_granularity: TODO_SET_GRANULARITY
+  #AA: I commented out : time_granularity: TODO_SET_GRANULARITY
 
-# TODO: Define output columns, mark primary keys, and add a few checks.
-columns:
-  - name: TODO_pk1
-    type: TODO
-    description: TODO
-    primary_key: true
-    nullable: false
-    checks:
-      - name: not_null
-  - name: TODO_metric
-    type: TODO
-    description: TODO
-    checks:
-      - name: non_negative
+
 
 # TODO: Add one custom check that validates a staging invariant (uniqueness, ranges, etc.)
 # Docs: https://getbruin.com/docs/bruin/quality/custom
 custom_checks:
-  - name: TODO_custom_check_name
-    description: TODO
-    query: |
-      -- TODO: return a single scalar (COUNT(*), etc.) that should match `value`
-      SELECT 0
-    value: 0
+  - name: row_count_positive
+    description: Ensures the table is not empty
+    query: SELECT COUNT(*) > 0 FROM statging.trips
+    value: 1
 
 @bruin */
 
