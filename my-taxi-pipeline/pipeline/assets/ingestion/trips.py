@@ -2,47 +2,75 @@
 
 # TODO: Set the asset name (recommended pattern: schema.asset_name).
 # - Convention in this module: use an `ingestion.` schema for raw ingestion tables.
-name: TODO_SET_ASSET_NAME
-
-# TODO: Set the asset type.
-# Docs: https://getbruin.com/docs/bruin/assets/python
+name: ingestion.trips
 type: python
-
-# TODO: Pick a Python image version (Bruin runs Python in isolated environments).
-# Example: python:3.11
-image: TODO_SET_PYTHON_IMAGE
+image: python:3.11
 
 # TODO: Set the connection.
-connection: duckdb-default
+# I commented out (AA)
+connection: duckdb-default 
 
-# TODO: Choose materialization (optional, but recommended).
-# Bruin feature: Python materialization lets you return a DataFrame (or list[dict]) and Bruin loads it into your destination.
-# This is usually the easiest way to build ingestion assets in Bruin.
-# Alternative (advanced): you can skip Bruin Python materialization and write a "plain" Python asset that manually writes
-# into DuckDB (or another destination) using your own client library and SQL. In that case:
-# - you typically omit the `materialization:` block
-# - you do NOT need a `materialize()` function; you just run Python code
-# Docs: https://getbruin.com/docs/bruin/assets/python#materialization
 materialization:
-  # TODO: choose `table` or `view` (ingestion generally should be a table)
   type: table
-  # TODO: pick a strategy.
-  # suggested strategy: append
-  strategy: TODO
+  strategy: append
 
 # TODO: Define output columns (names + types) for metadata, lineage, and quality checks.
 # Tip: mark stable identifiers as `primary_key: true` if you plan to use `merge` later.
 # Docs: https://getbruin.com/docs/bruin/assets/columns
 columns:
-  - name: TODO_col1
-    type: TODO_type
-    description: TODO
+  - name: vendor_id
+    type: integer
+  - name: pickup_datetime
+    type: timestamp
+  - name: dropoff_datetime
+    type: timestamp
+  - name: passenger_count
+    type: integer
+  - name: trip_distance
+    type: double
+  - name: ratecode_id
+    type: integer
+  - name: store_and_fwd_flag
+    type: string
+  - name: pulocation_id
+    type: integer
+  - name: dolocation_id
+    type: integer
+  - name: payment_type
+    type: integer
+  - name: fare_amount
+    type: double
+  - name: extra
+    type: double
+  - name: mta_tax
+    type: double
+  - name: tip_amount
+    type: double
+  - name: tolls_amount
+    type: double
+  - name: improvement_surcharge
+    type: double
+  - name: total_amount
+    type: double
+  - name: congestion_surcharge
+    type: double
+  - name: airport_fee
+    type: double
+  - name: taxi_type
+    type: string
+  - name: extracted_at
+    type: timestamp
 
 @bruin"""
 
 # TODO: Add imports needed for your ingestion (e.g., pandas, requests).
 # - Put dependencies in the nearest `requirements.txt` (this template has one at the pipeline root).
 # Docs: https://getbruin.com/docs/bruin/assets/python
+
+import pandas as pd
+import os
+import json
+from datetime import datetime, timedelta
 
 
 # TODO: Only implement `materialize()` if you are using Bruin Python materialization.
@@ -67,6 +95,55 @@ def materialize():
     - Add a column like `extracted_at` for lineage/debugging (timestamp of extraction).
     - Prefer append-only in ingestion; handle duplicates in staging.
     """
-    # return final_dataframe
+    start_date_str = os.getenv('BRUIN_START_DATE')
+    end_date_str = os.getenv('BRUIN_END_DATE')
+    vars_json = os.getenv('BRUIN_VARS')
+    
+    if vars_json:
+        vars_dict = json.loads(vars_json)
+        taxi_types = vars_dict.get('taxi_types', ['yellow'])
+    else:
+        taxi_types = ['yellow']
+    
+    # Generate list of months between start and end
+    start = datetime.fromisoformat(start_date_str)
+    end = datetime.fromisoformat(end_date_str)
+    months = []
+    current = start.replace(day=1)
+    while current <= end:
+        months.append(current)
+        # Move to next month
+        next_month = current.month % 12 + 1
+        next_year = current.year + (current.month // 12)
+        current = current.replace(year=next_year, month=next_month, day=1)
+    
+    dfs = []
+    for taxi_type in taxi_types:
+        for month in months:
+            year = month.year
+            month_str = f"{month.month:02d}"
+            url = f"https://d37ci6vzurychx.cloudfront.net/trip-data/{taxi_type}_tripdata_{year}-{month_str}.parquet"
+            try:
+                df = pd.read_parquet(url)
+                # Standardize datetime column names
+                if taxi_type in ['yellow', 'green']:
+                    prefix = 'tpep_' if taxi_type == 'yellow' else 'lpep_'
+                    df.rename(columns={
+                        f'{prefix}pickup_datetime': 'pickup_datetime',
+                        f'{prefix}dropoff_datetime': 'dropoff_datetime'
+                    }, inplace=True)
+                # For fhv, already pickup_datetime, dropoff_datetime
+                df['taxi_type'] = taxi_type
+                df['extracted_at'] = datetime.now()
+                dfs.append(df)
+            except Exception as e:
+                print(f"Failed to fetch {url}: {e}")
+                continue
+    
+    if dfs:
+        final_df = pd.concat(dfs, ignore_index=True)
+        return final_df
+    else:
+        return pd.DataFrame()
 
 
