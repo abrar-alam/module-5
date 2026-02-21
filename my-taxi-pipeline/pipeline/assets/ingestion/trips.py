@@ -37,9 +37,20 @@ columns:
   - name: pickup_datetime
     type: timestamp
     description: "When the meter was engaged"
+    primary_key: true
   - name: dropoff_datetime
     type: timestamp
     description: "When the meter was disengaged"
+  - name: pickup_location_id
+    type: bigint
+  - name: dropoff_location_id
+    type: bigint
+  - name: fare_amount
+    type: double
+  - name: taxi_type
+    type: varchar
+  - name: payment_type
+    type: bigint
 
 @bruin"""
 
@@ -102,6 +113,7 @@ def materialize():
                 response = requests.get(url)
                 response.raise_for_status()
                 df = pd.read_parquet(pd.io.common.BytesIO(response.content))
+                df['taxi_type'] = taxi_type
                 dfs.append(df)
             except requests.RequestException as e:
                 print(f"Failed to fetch {url}: {e}")
@@ -110,14 +122,22 @@ def materialize():
     # Concatenate DataFrames
     if dfs:
         final_df = pd.concat(dfs, ignore_index=True)
+        # Rename columns to match the defined schema
+        final_df = final_df.rename(columns={
+            'tpep_pickup_datetime': 'pickup_datetime',
+            'tpep_dropoff_datetime': 'dropoff_datetime',
+            'pu_location_id': 'pickup_location_id',
+            'do_location_id': 'dropoff_location_id',
+            'ratecode_id': 'rate_code_id'
+        })
     else:
         # Return empty DataFrame with expected columns if no data
         final_df = pd.DataFrame(columns=[
             'vendor_id', 'pickup_datetime', 'dropoff_datetime', 'passenger_count',
-            'trip_distance', 'rate_code_id', 'store_and_fwd_flag', 'pu_location_id',
-            'do_location_id', 'payment_type', 'fare_amount', 'extra', 'mta_tax',
+            'trip_distance', 'rate_code_id', 'store_and_fwd_flag', 'pickup_location_id',
+            'dropoff_location_id', 'payment_type', 'fare_amount', 'extra', 'mta_tax',
             'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount',
-            'congestion_surcharge', 'airport_fee', 'extracted_at'
+            'congestion_surcharge', 'airport_fee', 'taxi_type', 'extracted_at'
         ])
 
     # Add extracted_at column
