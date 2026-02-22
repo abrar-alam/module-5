@@ -123,6 +123,7 @@ def materialize():
     if dfs:
         final_df = pd.concat(dfs, ignore_index=True)
         # Rename columns to match the defined schema
+        # AA: Fix the col renaming 
         final_df = final_df.rename(columns={
             'tpep_pickup_datetime': 'pickup_datetime',
             'tpep_dropoff_datetime': 'dropoff_datetime',
@@ -144,5 +145,3 @@ def materialize():
     final_df['extracted_at'] = pd.Timestamp.now()
 
     return final_df
-
-
