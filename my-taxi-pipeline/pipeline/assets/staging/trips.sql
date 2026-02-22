@@ -21,9 +21,9 @@ columns:
       - name: not_null
   - name: dropoff_datetime
     type: timestamp
-  - name: pu_location_id
+  - name: pickup_location_id
     type: bigint
-  - name: do_location_id
+  - name: dropoff_location_id
     type: bigint
   - name: fare_amount
     type: double
@@ -44,8 +44,8 @@ custom_checks:
 SELECT
     t.pickup_datetime,
     t.dropoff_datetime,
-    t.pu_location_id,
-    t.do_location_id,
+    t.pickup_location_id,
+    t.dropoff_location_id,
     t.fare_amount,
     t.taxi_type,
     p.payment_type_name
@@ -56,6 +56,6 @@ WHERE t.pickup_datetime >= '{{ start_datetime }}'
   AND t.pickup_datetime < '{{ end_datetime }}'
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY t.pickup_datetime, t.dropoff_datetime,
-                 t.pu_location_id, t.do_location_id, t.fare_amount
+                 t.pickup_location_id, t.dropoff_location_id, t.fare_amount
     ORDER BY t.pickup_datetime
 ) = 1

@@ -121,16 +121,20 @@ def materialize():
 
     # Concatenate DataFrames
     if dfs:
-        final_df = pd.concat(dfs, ignore_index=True)
-        # Rename columns to match the defined schema
-        # AA: Fix the col renaming 
-        final_df = final_df.rename(columns={
+        # This is done since Yellow and Green taxi datasets have different column names for pickup and dropoff datetimes
+        for df in dfs:
+            df.rename(columns={
             'tpep_pickup_datetime': 'pickup_datetime',
             'tpep_dropoff_datetime': 'dropoff_datetime',
-            'pu_location_id': 'pickup_location_id',
-            'do_location_id': 'dropoff_location_id',
-            'ratecode_id': 'rate_code_id'
-        })
+            'lpep_pickup_datetime' : 'pickup_datetime',
+            'lpep_dropoff_datetime' : 'dropoff_datetime',
+            'PULocationID': 'pickup_location_id',
+            'DOLocationID': 'dropoff_location_id',
+            'RatecodeID': 'rate_code_id',
+            'VendorID':'vendor_id'
+        }, inplace=True)
+            
+        final_df = pd.concat(dfs, ignore_index=True)
     else:
         # Return empty DataFrame with expected columns if no data
         final_df = pd.DataFrame(columns=[
@@ -138,7 +142,7 @@ def materialize():
             'trip_distance', 'rate_code_id', 'store_and_fwd_flag', 'pickup_location_id',
             'dropoff_location_id', 'payment_type', 'fare_amount', 'extra', 'mta_tax',
             'tip_amount', 'tolls_amount', 'improvement_surcharge', 'total_amount',
-            'congestion_surcharge', 'airport_fee', 'taxi_type', 'extracted_at'
+            'congestion_surcharge', 'taxi_type', 'extracted_at'
         ])
 
     # Add extracted_at column
