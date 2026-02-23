@@ -1,19 +1,8 @@
 # Overview - End-to-End Data Platform
 
-This hands-on tutorial guides you through building a **complete NYC Taxi data pipeline** from scratch using Bruin - a unified CLI tool for data ingestion, transformation, orchestration, and governance.
-
-Checkout our [Zoomcamp Project Prize](https://getbruin.com/zoomcamp-project) to learn more about how you can win a free Claude subscription service.
-
-Please reach out to us via our [Slack Community](https://join.slack.com/t/bruindatacommunity/shared_invite/zt-3oaskee9f-YbvwEEdMgQ1elmKzqmIHTg) to ask questions, share feedback, or report issues.
-
-Register for [Bruin Cloud](https://cloud.getbruin.com/register) to deploy your pipelines: registration is free (no credit card required) and includes complimentary credits to get started.
-
-### YouTube Video Tutorial Playlist
-[![Video Tutorials Playlist](https://img.youtube.com/vi/f6vg7lGqZx0/hqdefault.jpg)](https://www.youtube.com/playlist?list=PLnRr-L-cuxO4lUUdkXV5YPHT5ZEcEeXQD)
-
 ## Learning Goals
 
-You'll learn to build a production-ready ELT pipeline that:
+Built a production-ready ELT pipeline that:
 - **Ingests** real NYC taxi trip data from public APIs using Python
 - **Transforms** and cleans raw data with SQL, applying incremental strategies and deduplication
 - **Reports** aggregated analytics with built-in quality checks
